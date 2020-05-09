@@ -46,10 +46,12 @@ def extract_trades(file):
     trades['Net Price'].replace('CREDIT', value=0., inplace=True)
     trades['Net Price'].replace('DEBIT', value=0., inplace=True)
     trades['Underlying'] = trades['Symbol'] 
-    trades['Symbol'] = trades['Opra'].combine(trades['Symbol'], lambda opra, symbol: symbol if pd.isna(opra) else opra)
+    trades['Symbol'] = trades['Opra'].combine(trades['Symbol'], 
+                        lambda opra, symbol: symbol if pd.isna(opra) else '.'+opra)
     trades.drop('Opra', axis=1, inplace=True)
-    trades = trades[['Account Code', 'Order ID', 'Exec Time', 'Spread',  'Type', 'Symbol', 'Underlying', 'Qty',
-                       'Pos Effect', 'Exp', 'Strike', 'Price', 'Net Price', 'Order Type']]
+    trades = trades[['Account Code', 'Order ID', 'Exec Time', 'Spread',  
+                     'Type', 'Symbol', 'Underlying', 'Qty', 'Pos Effect', 
+                     'Exp', 'Strike', 'Price', 'Net Price', 'Order Type']]
     trades.sort_values('Exec Time', inplace=True)
     
     return trades
