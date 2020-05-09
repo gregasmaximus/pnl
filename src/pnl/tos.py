@@ -39,6 +39,7 @@ def extract_trades(file):
     trades['Account Code'] = trades['Account Code'].astype(np.int64)
     trades['Order ID'] = trades['Order ID'].astype(np.int64)
     trades['Exec Time'].fillna(method='ffill', inplace=True)
+    trades['Exec Time'] = pd.to_datetime(trades['Exec Time'])
     trades['Spread'].fillna(method='ffill', inplace=True)
     trades['Order Type'].fillna(method='ffill', inplace=True)
     # For spreads, price is in first leg. Make price zero for other legs
@@ -49,6 +50,8 @@ def extract_trades(file):
     trades.drop('Opra', axis=1, inplace=True)
     trades = trades[['Account Code', 'Order ID', 'Exec Time', 'Spread',  'Type', 'Symbol', 'Underlying', 'Qty',
                        'Pos Effect', 'Exp', 'Strike', 'Price', 'Net Price', 'Order Type']]
+    trades.sort_values('Exec Time', inplace=True)
+    
     return trades
 
 def tos_to_float(s):
