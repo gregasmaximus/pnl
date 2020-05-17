@@ -18,7 +18,6 @@ def extract_df_from_stmt(file, header):
     with open(file) as f:
         reader = csv.reader(f)
         for i, row in enumerate(reader):
-            #print(i, row)
             if not found_start:
                 if len(row) == 1  and row[0] == header:
                     found_start = True
@@ -42,16 +41,15 @@ def extract_trades(file):
     trades['Exec Time'] = pd.to_datetime(trades['Exec Time'])
     trades['Spread'].fillna(method='ffill', inplace=True)
     trades['Order Type'].fillna(method='ffill', inplace=True)
-    # For spreads, price is in first leg. Make price zero for other legs
-    trades['Net Price'].replace('CREDIT', value=0., inplace=True)
-    trades['Net Price'].replace('DEBIT', value=0., inplace=True)
+    # FIXME: Assumes price multiplier is 100, see issue #1 in repo
+    trades.loc[trades.Opra.notna(), 'Price'] *= 100.
     trades['Underlying'] = trades['Symbol'] 
     trades['Symbol'] = trades['Opra'].combine(trades['Symbol'], 
                         lambda opra, symbol: symbol if pd.isna(opra) else '.'+opra)
     trades.drop('Opra', axis=1, inplace=True)
     trades = trades[['Account Code', 'Order ID', 'Exec Time', 'Spread',  
                      'Type', 'Symbol', 'Underlying', 'Qty', 'Pos Effect', 
-                     'Exp', 'Strike', 'Price', 'Net Price', 'Order Type']]
+                     'Exp', 'Strike', 'Price', 'Order Type']]
     trades.sort_values('Exec Time', inplace=True)
     
     return trades
@@ -79,8 +77,3 @@ def extract_equities(file):
     positions['Mark Value'] = positions['Mark Value'].apply(tos_to_float)
     positions.set_index('Symbol', inplace=True)
     return positions
-
-if __name__ == '__main__':
-    stmt_file = '2020-04-23-AccountStatement.csv'
-    x = extract_equities(stmt_file)
-    x.head()

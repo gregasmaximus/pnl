@@ -15,4 +15,6 @@ import pnl.tos as tos
 # Get trades from example ToS statement
 statement = '../data/2020-05-08-AccountStatement.csv'
 trades = tos.extract_trades(statement)
-trades.head()
+print('# of trades:', len(trades))
+print('First trade date: ',  trades['Exec Time'].min())
+print('First trade date: ',  trades['Exec Time'].max())
