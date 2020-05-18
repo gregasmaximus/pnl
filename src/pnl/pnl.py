@@ -11,6 +11,7 @@ Principles:
 
 import numpy as np
 import pandas as pd
+import datetime as dt
 
 def update_trades(new_trades, open_trades, closed_trades):
     
@@ -41,11 +42,12 @@ def update_trades(new_trades, open_trades, closed_trades):
               get dropped, instead of just one.
             - Need a unique index for each line - add it to ot
             - Revisit FIXME lines below
+            - Drop duplicate trades (see github issue #2)
                     
     """
     
     # For debugging:
-    dbugsym = 'ICSH'
+    dbugsym = '_ALL_'
     
     # Don't mangle the dataframes that we are passed.
     ct = closed_trades.copy()
@@ -53,7 +55,7 @@ def update_trades(new_trades, open_trades, closed_trades):
 
     for i, nt in new_trades.iterrows(): # for each new trade...
         while (abs(nt.Qty) > 0): # iterate until distribution of new trade done
-            if nt.Symbol == dbugsym:
+            if nt.Symbol == dbugsym or nt.Symbol == '_ALL_':
                 dot = ot[ot.Symbol == dbugsym]
                 dct = ct[ct.Symbol == dbugsym]
                 print('\n*** Before:')
@@ -90,8 +92,10 @@ def update_trades(new_trades, open_trades, closed_trades):
                     #    but different symbol for each leg
                     # FIXME: Line below inadvertantely drops multiple trades
                     # 'Opening Order' + Symbol is not unique!
-                    ot = ot[ ~ ((ot['Opening Order'] == p['Opening Order']) 
-                                & (ot.Symbol == p.Symbol))]
+                   # ot = ot[ ~ ((ot['Opening Order'] == p['Opening Order']) 
+                   #             & (ot.Symbol == p.Symbol))]
+                    ot.drop(p.index)
+                   
                     
                 else: # trade size < positions size
                     # create record for closed trade    
@@ -108,20 +112,23 @@ def update_trades(new_trades, open_trades, closed_trades):
                     # Reduce qty of open position by closed trade
                     # FIXME: Line below may have unexpected effects
                     # 'Opening Order' + Symbol is not unique!
-                    ot.loc[(ot['Opening Order'] == p['Opening Order']) 
-                       & (ot.Symbol == p.Symbol), 'Qty'] += nt.Qty
+                    ot.loc[nt.index, 'Qty'] += nt.Qty
                     nt.Qty = 0 # We have distributed the remaining quantity
                     
             else: # It's an opening trade
-                ot = ot.append({ 'Account Code': nt['Account Code'], 
-                             'Symbol': nt['Symbol'], 'Qty': nt['Qty'],
-                             'Time Opened': nt['Exec Time'], 
-                             'Opening Order': nt['Order ID'], 
-                             'Opening Price': nt['Price']}, ignore_index=True)
+            #FIXME - This is broken!
+                ot[dt.datetime.now(), :] = { # use time as index
+                    'Account Code': nt['Account Code'], 
+                    'Symbol': nt['Symbol'], 
+                    'Qty': nt['Qty'],
+                    'Time Opened': nt['Exec Time'], 
+                    'Opening Order': nt['Order ID'], 
+                    'Opening Price': nt['Price']}
+                
                 nt.Qty = 0 # We have distributed the remaining quantity
                 
             # filter down to one symbol for debugging
-            if nt.Symbol == dbugsym:
+            if nt.Symbol == dbugsym or nt.Symbol == '_ALL_':
                 dot = ot[ot.Symbol == dbugsym]
                 dct = ct[ct.Symbol == dbugsym]
                 print('\n*** After:')
@@ -137,7 +144,7 @@ def create_open_trade_df():
     Creates an empty dataframe for open trades
     """
     
-    return pd.DataFrame(columns=['Account Code', 'Symbol', 'Qty',
+    return pd.DataFrame(index= [], columns=['Account Code', 'Symbol', 'Qty',
             'Time Opened', 'Opening Order', 'Opening Price'])
 
 def create_closed_trade_df():

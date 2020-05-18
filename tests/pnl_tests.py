@@ -25,5 +25,12 @@ new_trades = tos.extract_trades(statement)
 open_trades = pnl.create_open_trade_df()
 closed_trades = pnl.create_closed_trade_df()
 
+# ot = open_trades.copy()
+# d = { 'Account Code': 'Account Code', 
+#                              'Symbol': 'Symbol', 'Qty': 'Qty',
+#                              'Time Opened': 'Exec Time', 
+#                              'Opening Order': 'Order ID', 
+#                             'Opening Price': 'Price'}
+
 ot, ct = pnl.update_trades(new_trades, open_trades, closed_trades)
 
